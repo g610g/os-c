@@ -74,20 +74,22 @@ int get_next_arrival_time(int* current_time, Process* head){
 Process* update_list(Process* head, int id_arr_length, int* ids){
     Process* temp = head, *next = NULL;
     int i = 0;
-    // printf("ids len:%d\n", id_arr_length);
     while(i < id_arr_length && temp != NULL){
         //if the to be deleted is the head of the list
         if (temp == head && ids[i] == temp->id){
             head = temp->next;
-            temp->next->prev = NULL;
+            if (head == NULL){
+                free(temp);
+                return head;
+            }
+            head->prev = NULL;
             free(temp);
             temp = head;
-            printf("head update\n");
             i++;
         }else if(ids[i] == temp->id){
-            temp->next->prev = temp->prev;
-            temp->prev->next = temp->next;
             next = temp->next;
+            next->prev = temp->prev;
+            temp->prev->next = next;
             free(temp);
             temp = next;
             i++;
@@ -95,14 +97,19 @@ Process* update_list(Process* head, int id_arr_length, int* ids){
             temp = temp->next;
         }
     }
-    // print_list(head);
     return head;
 }
 //we have to get the next arrival time of this
 int process_nodes_array(Process** nodes, int length, int* current_time, int next_time, int* ids, int id_index){
     //might be the last or all nodes have the same arrival time
+    //if all of the process has the same time arrival then we can just process each of it 
     if (next_time == 0){
-        next_time = nodes[length - 1]->burst_time;
+        for (int i = 0; i < length; i++){
+            ids[id_index] = nodes[i]->id;
+            id_index++;
+            (*current_time) += nodes[i]->burst_time;
+        }
+        return id_index;
     }
     for (int i = 0; i < length; i++)
     {
@@ -115,9 +122,9 @@ int process_nodes_array(Process** nodes, int length, int* current_time, int next
                 //push the id to be deleted in the list
                 ids[id_index] = nodes[i]->id;
                 id_index += 1;
-                continue;
             }else if (difference == 0){
-                
+                ids[id_index] = nodes[i]->id;
+                id_index++;
             }
             else if (difference < nodes[i]->burst_time){
                 //updates only in the node no need to put in array
@@ -140,8 +147,8 @@ Process* load_array(Process*head, int* arrival_time){
     Process* temp = head;
     int i = 0;
     while (temp != NULL){
-        
         if (temp->arrival_time == (*arrival_time) || temp->arrival_time < (*arrival_time)){
+            // printf("burst_time:%d\n", temp->burst_time);
             nodes[i] = temp;
             i++;
         }
@@ -159,9 +166,9 @@ Process* load_array(Process*head, int* arrival_time){
 int main(void){
     Process* processes = NULL;
     int arrival = 0;
-    processes = initialize(processes, 2);
+    processes = initialize(processes, 3);
     processes = load_array(processes, &arrival);
-
+    processes = load_array(processes, &arrival);
     // while (processes != NULL)
     // {
     //     processes = load_array(processes, &arrival);
