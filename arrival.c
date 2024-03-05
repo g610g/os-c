@@ -56,16 +56,17 @@ Process* initialize(Process* head, int val){
 }
 
 void print_current_nodes(Process** nodes, int length){
-    printf("Current list in the array: ");
+    printf("Current list in the array: \n");
     for (int i = 0; i < length; i++)
     {
         printf("Burst time: %d id: %d\n", nodes[i]->burst_time, nodes[i]->id);
     }
 }
+//problem here for finding the arrival time
 int get_next_arrival_time(int* current_time, Process* head){
     Process* temp = head;
     while(temp != NULL){
-        if (temp->arrival_time != (*current_time)){
+        if (temp->arrival_time != (*current_time) && temp->arrival_time > (*current_time)){
             return temp->arrival_time;
         }
         temp = temp->next;
@@ -88,6 +89,15 @@ Process* update_list(Process* head, int id_arr_length, int* ids){
             i++;
         }else if(ids[i] == temp->id){
             next = temp->next;
+            //seg fault happens here
+            if (next == NULL){
+                temp->prev->next = NULL;
+                Process* new_temp = temp->prev;
+                free(temp);
+                temp = new_temp;
+                i++;
+                continue;
+            }
             next->prev = temp->prev;
             temp->prev->next = next;
             free(temp);
@@ -99,15 +109,31 @@ Process* update_list(Process* head, int id_arr_length, int* ids){
     }
     return head;
 }
+void sort_process_array(Process** nodes, int length){
+    for(int i = 0; i < length; i++){
+        for (int j = i + 1; j < length; j++){
+            if (nodes[i]->burst_time > nodes[j]->burst_time){
+                Process* temp = nodes[i];
+                nodes[i] = nodes[j];
+                nodes[j] = temp;
+            }
+        }
+    }
+}
 //we have to get the next arrival time of this
 int process_nodes_array(Process** nodes, int length, int* current_time, int next_time, int* ids, int id_index){
     //might be the last or all nodes have the same arrival time
     //if all of the process has the same time arrival then we can just process each of it 
-    if (next_time == 0){
+    sort_process_array(nodes, length);
+    // printf("after sort:\n");
+    // print_current_nodes(nodes, length);
+    printf("next time:%d\n", next_time);
+    if (next_time == 0){      
         for (int i = 0; i < length; i++){
             ids[id_index] = nodes[i]->id;
             id_index++;
             (*current_time) += nodes[i]->burst_time;
+            printf("id:%d, burst_time:%d, current_time:%d\n", nodes[i]->id, nodes[i]->burst_time, (*current_time));
         }
         return id_index;
     }
@@ -123,8 +149,7 @@ int process_nodes_array(Process** nodes, int length, int* current_time, int next
                 ids[id_index] = nodes[i]->id;
                 id_index += 1;
             }else if (difference == 0){
-                ids[id_index] = nodes[i]->id;
-                id_index++;
+                //ireturn lang sa para na maka process napod og another nga nodes
             }
             else if (difference < nodes[i]->burst_time){
                 //updates only in the node no need to put in array
@@ -132,12 +157,10 @@ int process_nodes_array(Process** nodes, int length, int* current_time, int next
                 (*current_time) = next_time;
                 //load again into the array
             }
-
         }
     }
     (*current_time) = next_time;
     return id_index;
-
 }
 
 //load the task that has the same time into the array
@@ -154,7 +177,8 @@ Process* load_array(Process*head, int* arrival_time){
         }
         temp = temp->next;
     }
-    // print_current_nodes(nodes, i);
+    print_current_nodes(nodes, i);
+    
     int id_arr_length = process_nodes_array(nodes, i, arrival_time, get_next_arrival_time(arrival_time, head), ids, 0);
     head = update_list(head, id_arr_length, ids);
     free(nodes);
@@ -166,13 +190,13 @@ Process* load_array(Process*head, int* arrival_time){
 int main(void){
     Process* processes = NULL;
     int arrival = 0;
-    processes = initialize(processes, 3);
-    processes = load_array(processes, &arrival);
-    processes = load_array(processes, &arrival);
-    // while (processes != NULL)
-    // {
-    //     processes = load_array(processes, &arrival);
-    // }
+    processes = initialize(processes, 6);
+    // processes = load_array(processes, &arrival);
+    // processes = load_array(processes, &arrival);
+    while (processes != NULL)
+    {
+        processes = load_array(processes, &arrival);
+    }
     // print_list(processes);
     int current_process_index = 0;
 
