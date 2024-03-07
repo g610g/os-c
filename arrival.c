@@ -5,8 +5,8 @@ typedef struct Process
 {
     int burst_time;
     int arrival_time;
-//    int waiting_time;
-//    int turnaround_time;
+    int waiting_time;
+    int turnaround_time;
     int id;
     struct Process* next; 
     struct Process* prev;
@@ -32,14 +32,12 @@ Process* initialize(Process* head, int val){
     int burst_time = 0, id, arrival_time; 
     Process* prev = NULL;
     for (int i = 0; i < val; i++){
-        printf("Enter burst time for process:%d ", i);
-        scanf("%d", &burst_time);
-        printf("Enter arrival time for process %d ", i);
-        scanf("%d", &arrival_time);
+        printf("Enter arrival time and burst time  for process:%d ", i + 1);
+        scanf("%d %d", &arrival_time, &burst_time);
         Process* node = malloc(sizeof(Process));
         node->burst_time = burst_time;
         node->arrival_time = arrival_time;
-        node->id = i;
+        node->id = i + 1;
         node->next = NULL;
         node->prev = NULL;
         if (head == NULL){
@@ -121,19 +119,17 @@ void sort_process_array(Process** nodes, int length){
     }
 }
 //we have to get the next arrival time of this
-int process_nodes_array(Process** nodes, int length, int* current_time, int next_time, int* ids, int id_index){
+int process_nodes_array(Process** nodes, int length, int* current_time, int next_time, int* ids, int id_index, int* waiting_time, int* last_executed_id){
     //might be the last or all nodes have the same arrival time
     //if all of the process has the same time arrival then we can just process each of it 
     sort_process_array(nodes, length);
-    // printf("after sort:\n");
-    // print_current_nodes(nodes, length);
-    printf("next time:%d\n", next_time);
     if (next_time == 0){      
         for (int i = 0; i < length; i++){
             ids[id_index] = nodes[i]->id;
             id_index++;
             (*current_time) += nodes[i]->burst_time;
-            printf("id:%d, burst_time:%d, current_time:%d\n", nodes[i]->id, nodes[i]->burst_time, (*current_time));
+            printf("P%d\t\t\t\t%d\t\t%d\t\t%d\n", nodes[i]->id,nodes[i]->burst_time,(*waiting_time), (nodes[i]->burst_time + (*waiting_time)));
+            (*waiting_time) += nodes[i]->burst_time;
         }
         return id_index;
     }
@@ -142,60 +138,68 @@ int process_nodes_array(Process** nodes, int length, int* current_time, int next
         int difference = next_time - (*current_time);
         //might be the head of the list 
         //head might be updated
-        if (nodes[i]->burst_time <= next_time){
-            if (difference >= nodes[i]->burst_time){
-                (*current_time) += nodes[i]->burst_time;
-                //push the id to be deleted in the list
-                ids[id_index] = nodes[i]->id;
-                id_index += 1;
-            }else if (difference == 0){
+        
+        if (difference >= nodes[i]->burst_time){
+            (*current_time) += nodes[i]->burst_time;
+            //push the id to be deleted in the list
+            ids[id_index] = nodes[i]->id;
+            printf("P%d\t\t\t\t%d\t\t%d\t\t%d\n",nodes[i]->id, nodes[i]->burst_time, (*waiting_time), (nodes[i]->burst_time + (*waiting_time)));
+            (*waiting_time) += nodes[i]->burst_time;
+            id_index += 1;
+        }else if (difference == 0){
                 //ireturn lang sa para na maka process napod og another nga nodes
-            }
-            else if (difference < nodes[i]->burst_time){
-                //updates only in the node no need to put in array
-                nodes[i]->burst_time -= difference;
-                (*current_time) = next_time;
-                //load again into the array
-            }
         }
+        else if (difference < nodes[i]->burst_time){
+            //updates only in the node no need to put in array
+            nodes[i]->burst_time -= difference;
+            (*last_executed_id) = nodes[i]->id;
+            printf("P%d\t\t\t\t%d\t\t%d\t\t%d\n", nodes[i]->id, difference, (*waiting_time), (difference + (*waiting_time)));
+            (*waiting_time) += difference;
+            nodes[i]->waiting_time = (*waiting_time);
+            // nodes[i]->turnaround_time = (); 
+            (*current_time) = next_time;
+            //load again into the array
+            }
     }
     (*current_time) = next_time;
     return id_index;
 }
 
 //load the task that has the same time into the array
-Process* load_array(Process*head, int* arrival_time){
+Process* load_array(Process*head, int* arrival_time, int* waiting_time, int* last_executed_id){
     Process** nodes = malloc(sizeof(Process*) * MAX);
     int ids[MAX];
     Process* temp = head;
     int i = 0;
     while (temp != NULL){
         if (temp->arrival_time == (*arrival_time) || temp->arrival_time < (*arrival_time)){
-            // printf("burst_time:%d\n", temp->burst_time);
             nodes[i] = temp;
             i++;
         }
         temp = temp->next;
     }
-    print_current_nodes(nodes, i);
-    
-    int id_arr_length = process_nodes_array(nodes, i, arrival_time, get_next_arrival_time(arrival_time, head), ids, 0);
+    // print_current_nodes(nodes, i);
+    // printf("at time: %d\n", (*arrival_time));
+    int id_arr_length = process_nodes_array(nodes, i, arrival_time, get_next_arrival_time(arrival_time, head), ids, 0, waiting_time, last_executed_id);
     head = update_list(head, id_arr_length, ids);
     free(nodes);
-    print_list(head);
+    // print_list(head);
     return head;
 }
 
 
 int main(void){
     Process* processes = NULL;
-    int arrival = 0;
+    int arrival = 0, waiting_time = 0, last_executed_id = 0;
+
     processes = initialize(processes, 6);
     // processes = load_array(processes, &arrival);
     // processes = load_array(processes, &arrival);
+    printf("Output:\n");
+    printf("Process\t\t Burst Time\t\tWaiting Time\t\tTurn-around Time\n");
     while (processes != NULL)
     {
-        processes = load_array(processes, &arrival);
+        processes = load_array(processes, &arrival, &waiting_time, &last_executed_id);
     }
     // print_list(processes);
     int current_process_index = 0;
