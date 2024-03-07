@@ -155,8 +155,7 @@ int process_nodes_array(Process** nodes, int length, int* current_time, int next
             (*last_executed_id) = nodes[i]->id;
             printf("P%d\t\t\t\t%d\t\t%d\t\t%d\n", nodes[i]->id, difference, (*waiting_time), (difference + (*waiting_time)));
             (*waiting_time) += difference;
-            nodes[i]->waiting_time = (*waiting_time);
-            // nodes[i]->turnaround_time = (); 
+            nodes[i]->waiting_time = (*waiting_time); 
             (*current_time) = next_time;
             //load again into the array
             }
@@ -192,7 +191,7 @@ int main(void){
     Process* processes = NULL;
     int arrival = 0, waiting_time = 0, last_executed_id = 0;
 
-    processes = initialize(processes, 6);
+    processes = initialize(processes, 3);
     // processes = load_array(processes, &arrival);
     // processes = load_array(processes, &arrival);
     printf("Output:\n");
