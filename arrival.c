@@ -5,13 +5,45 @@ typedef struct Process
 {
     int burst_time;
     int arrival_time;
-    int waiting_time;
-    int turnaround_time;
+    // int waiting_time;
+    // int turnaround_time;
     int id;
     struct Process* next; 
     struct Process* prev;
 }Process;
-
+typedef struct Print{
+    int burst_time;
+    int waiting_time;
+    int id;
+    int turnaround_time;
+}Print;
+typedef struct PrintArray{
+    Print prints_array[MAX];
+    int index;
+}PrintArray;
+void print(PrintArray* print_arr){
+    int len = 0;
+    float total_waiting = 0, total_turn = 0;
+    for (int i = 0; i < print_arr->index; i++){
+        if (print_arr->prints_array[i + 1].id != print_arr->prints_array[i].id){
+            printf("P%d\t\t\t\t%d\t\t\t%d\t\t\t%d i = %d\n",print_arr->prints_array[i].id, print_arr->prints_array[i].burst_time, print_arr->prints_array[i].waiting_time, print_arr->prints_array[i].turnaround_time, i);
+            total_waiting += print_arr->prints_array[i].waiting_time;
+            total_turn += print_arr->prints_array[i].turnaround_time;
+            len++;
+            continue;
+        }
+        print_arr->prints_array[i + 1].burst_time += print_arr->prints_array[i].burst_time;
+        print_arr->prints_array[i + 1].waiting_time = print_arr->prints_array[i].waiting_time;
+        print_arr->prints_array[i + 1].turnaround_time = print_arr->prints_array[i + 1].burst_time +  print_arr->prints_array[i + 1].waiting_time;
+    }
+    printf("Average Waiting time: %f\n", total_waiting / len);
+    printf("Average Turn-around time: %f\n", total_turn / len);
+}
+void print_arr_list(PrintArray* print_arr){
+    for (int i = 0; i < print_arr->index; i++){
+         printf("P%d\t\t\t\t%d\t\t\t%d\t\t\t%d i = %d\n",print_arr->prints_array[i].id, print_arr->prints_array[i].burst_time, print_arr->prints_array[i].waiting_time, print_arr->prints_array[i].turnaround_time, i);
+    }
+}
 void print_list(Process* head){
     Process* temp = head;
     printf("List elements:\n");
@@ -125,7 +157,7 @@ void sort_process_array(Process** nodes, int length){
     }
 }
 //we have to get the next arrival time of this
-int process_nodes_array(Process** nodes, int length, int* current_time, int next_time, int* ids, int id_index, int* waiting_time, int* last_executed_id){
+int process_nodes_array(Process** nodes, int length, int* current_time, int next_time, int* ids, int id_index, int* waiting_time, PrintArray* print_arr){
     //might be the last or all nodes have the same arrival time
     //if all of the process has the same time arrival then we can just process each of it 
     sort_process_array(nodes, length);
@@ -134,7 +166,12 @@ int process_nodes_array(Process** nodes, int length, int* current_time, int next
             ids[id_index] = nodes[i]->id;
             id_index++;
             (*current_time) += nodes[i]->burst_time;
-            printf("P%d\t\t\t\t%d\t\t%d\t\t%d\n", nodes[i]->id,nodes[i]->burst_time,(*waiting_time), (nodes[i]->burst_time + (*waiting_time)));
+            // printf("P%d\t\t\t\t%d\t\t\t%d\t\t\t%d\n", nodes[i]->id,nodes[i]->burst_time,(*waiting_time), (nodes[i]->burst_time + (*waiting_time)));
+            print_arr->prints_array[print_arr->index].id = nodes[i]->id;
+            print_arr->prints_array[print_arr->index].burst_time = nodes[i]->burst_time;
+            print_arr->prints_array[print_arr->index].waiting_time = (*waiting_time);
+            print_arr->prints_array[print_arr->index].turnaround_time = (*waiting_time) + nodes[i]->burst_time;
+            (print_arr->index++);
             (*waiting_time) += nodes[i]->burst_time;
         }
         return id_index;
@@ -149,13 +186,18 @@ int process_nodes_array(Process** nodes, int length, int* current_time, int next
             (*current_time) += nodes[i]->burst_time;
             //push the id to be deleted in the list
             ids[id_index] = nodes[i]->id;
-            printf("P%d\t\t\t\t%d\t\t%d\t\t%d\n",nodes[i]->id, nodes[i]->burst_time, (*waiting_time), (nodes[i]->burst_time + (*waiting_time)));
+            // printf("P%d\t\t\t\t%d\t\t\t%d\t\t\t%d\n",nodes[i]->id, nodes[i]->burst_time, (*waiting_time), (nodes[i]->burst_time + (*waiting_time)));
+            print_arr->prints_array[print_arr->index].id = nodes[i]->id;
+            print_arr->prints_array[print_arr->index].burst_time = nodes[i]->burst_time;
+            print_arr->prints_array[print_arr->index].waiting_time = (*waiting_time);
+            print_arr->prints_array[print_arr->index].turnaround_time = (*waiting_time) + nodes[i]->burst_time;
+            (print_arr->index++);
             (*waiting_time) += nodes[i]->burst_time;
             id_index += 1;
         }else if (difference == 0){
                 //ireturn lang sa para na maka process napod og another nga nodes
         }
-        // else if (difference < nodes[i]->burst_time){
+            // else if (difference < nodes[i]->burst_time){
         //     if ((*last_executed_id) != nodes[i]->id){
         //         //do not print it yet,
         //         nodes[i]->waiting_time = (*waiting_time);
@@ -165,10 +207,13 @@ int process_nodes_array(Process** nodes, int length, int* current_time, int next
         else if (difference < nodes[i]->burst_time){
             //updates only in the node no need to put in array
             nodes[i]->burst_time -= difference;
-            (*last_executed_id) = nodes[i]->id;
-            printf("P%d\t\t\t\t%d\t\t%d\t\t%d\n", nodes[i]->id, difference, (*waiting_time), (difference + (*waiting_time)));
+            // printf("P%d\t\t\t\t%d\t\t\t%d\t\t\t%d\n", nodes[i]->id, difference, (*waiting_time), (difference + (*waiting_time)));
+            print_arr->prints_array[print_arr->index].id = nodes[i]->id;
+            print_arr->prints_array[print_arr->index].burst_time = difference;
+            print_arr->prints_array[print_arr->index].waiting_time = (*waiting_time);
+            print_arr->prints_array[print_arr->index].turnaround_time = (*waiting_time) + difference;
+            (print_arr->index++);
             (*waiting_time) += difference;
-            nodes[i]->waiting_time = (*waiting_time); 
             (*current_time) = next_time;
             //load again into the array
             }
@@ -179,7 +224,7 @@ int process_nodes_array(Process** nodes, int length, int* current_time, int next
 }
 
 //load the task that has the same time into the array
-Process* load_array(Process*head, int* arrival_time, int* waiting_time, int* last_executed_id){
+Process* load_array(Process*head, int* arrival_time, int* waiting_time, PrintArray* print_arr){
     Process** nodes = malloc(sizeof(Process*) * MAX);
     int ids[MAX];
     Process* temp = head;
@@ -193,7 +238,7 @@ Process* load_array(Process*head, int* arrival_time, int* waiting_time, int* las
     }
     // print_current_nodes(nodes, i);
     // printf("at time: %d\n", (*arrival_time));
-    int id_arr_length = process_nodes_array(nodes, i, arrival_time, get_next_arrival_time(arrival_time, head), ids, 0, waiting_time, last_executed_id);
+    int id_arr_length = process_nodes_array(nodes, i, arrival_time, get_next_arrival_time(arrival_time, head), ids, 0, waiting_time, print_arr);
     head = update_list(head, id_arr_length, ids);
     free(nodes);
     // print_list(head);
@@ -204,16 +249,18 @@ Process* load_array(Process*head, int* arrival_time, int* waiting_time, int* las
 int main(void){
     Process* processes = NULL;
     int arrival = 0, waiting_time = 0, last_executed_id = 0;
-
-    processes = initialize(processes, 3);
+    PrintArray print_arr;
+    print_arr.index = 0;
+    processes = initialize(processes, 6);
     // processes = load_array(processes, &arrival);
     // processes = load_array(processes, &arrival);
     printf("Output:\n");
     printf("Process\t\t Burst Time\t\tWaiting Time\t\tTurn-around Time\n");
     while (processes != NULL)
     {
-        processes = load_array(processes, &arrival, &waiting_time, &last_executed_id);
+        processes = load_array(processes, &arrival, &waiting_time, &print_arr);
     }
+    print(&print_arr);
     // print_list(processes);
     int current_process_index = 0;
 
