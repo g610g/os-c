@@ -23,7 +23,7 @@ void sort_burst(int arrtime[], int burst[], int process[], int elements, int* st
                             process[i] = temp_id;
 
                 }
-            }else if (arrtime[j] <= current_time && burst[j] < burst[i]){
+            }else if (arrtime[j] <= arrtime[i]){
                 temp_burst = burst[i];
                 burst[i] = burst[j];
                 burst[j] = temp_burst; 
@@ -35,21 +35,21 @@ void sort_burst(int arrtime[], int burst[], int process[], int elements, int* st
                 temp_id = process[i];
                 process[i] = process[j];
                 process[j] = temp_id;
-                
             }
-            // else if (arrtime[j] < arrtime[i]){
-            //     temp_burst = burst[i];
-            //     burst[i] = burst[j];
-            //     burst[j] = temp_burst; 
+            if (arrtime[j] <= current_time && burst[j] < burst[i]
+){
+                temp_burst = burst[i];
+                burst[i] = burst[j];
+                burst[j] = temp_burst; 
 
-            //     temp_arrtime = arrtime[i];
-            //     arrtime[i] = arrtime[j];
-            //     arrtime[j] = temp_arrtime;
+                temp_arrtime = arrtime[i];
+                arrtime[i] = arrtime[j];
+                arrtime[j] = temp_arrtime;
 
-            //     temp_id = process[i];
-            //     process[i] = process[j];
-            //     process[j] = temp_id;
-            // }
+                temp_id = process[i];
+                process[i] = process[j];
+                process[j] = temp_id;
+            }
         }
     }
 }
@@ -81,8 +81,9 @@ int calculate_seq(int arrtime[], int burst[], int process[], int elements, int* 
         //out of bounds to the current time
         if (arrtime[i] > (*current_time)){
             printf("arr time: %d\n", arrtime[i]);
-            //not sure
-            // (*current_time) = arrtime[i];
+            printf("next time:%d\n", next_time);
+            (*waiting_time) = arrtime[i];
+            (*current_time) = next_time;
             return elements;
         }
         int differ = next_time - (*current_time);
@@ -110,6 +111,7 @@ int calculate_seq(int arrtime[], int burst[], int process[], int elements, int* 
             return elements;
         }
     }
+    (*current_time) = next_time;
     return elements;
 
 }

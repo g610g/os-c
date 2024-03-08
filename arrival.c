@@ -29,11 +29,15 @@ void print_list(Process* head){
 //we have to sort this part right here
 Process* initialize(Process* head, int val){
     // Process* processes = malloc(sizeof(Process) * val);
-    int burst_time = 0, id, arrival_time; 
+    int burst_time = 0, id, arrival_time = 0, prev_arrival = 0; 
     Process* prev = NULL;
     for (int i = 0; i < val; i++){
         printf("Enter arrival time and burst time  for process:%d ", i + 1);
         scanf("%d %d", &arrival_time, &burst_time);
+        if (prev_arrival > arrival_time){
+            printf("Invalid input arrival time\n");
+            exit(0);
+        }
         Process* node = malloc(sizeof(Process));
         node->burst_time = burst_time;
         node->arrival_time = arrival_time;
@@ -43,11 +47,13 @@ Process* initialize(Process* head, int val){
         if (head == NULL){
             head = node;
             prev = node;
+            prev_arrival = arrival_time;
             continue;
         }
         prev->next = node;
         node->prev = prev;
         prev = node;
+        prev_arrival = arrival_time;
     }
     // print_list(head);
     return head;
@@ -149,6 +155,13 @@ int process_nodes_array(Process** nodes, int length, int* current_time, int next
         }else if (difference == 0){
                 //ireturn lang sa para na maka process napod og another nga nodes
         }
+        // else if (difference < nodes[i]->burst_time){
+        //     if ((*last_executed_id) != nodes[i]->id){
+        //         //do not print it yet,
+        //         nodes[i]->waiting_time = (*waiting_time);
+
+        //     }
+        // }
         else if (difference < nodes[i]->burst_time){
             //updates only in the node no need to put in array
             nodes[i]->burst_time -= difference;
@@ -161,6 +174,7 @@ int process_nodes_array(Process** nodes, int length, int* current_time, int next
             }
     }
     (*current_time) = next_time;
+    (*waiting_time) = next_time;
     return id_index;
 }
 
